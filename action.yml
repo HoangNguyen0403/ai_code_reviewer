@@ -38,4 +38,4 @@ runs:
         GITHUB_TOKEN: ${{ inputs.GITHUB_TOKEN }}
         GEMINI_API_KEY: ${{ inputs.GEMINI_API_KEY }}
         FILES_EXCLUDE: ${{ inputs.FILES_EXCLUDE }}
-      run: python ${{ github.action_path }}/ai_review_code.py
+      run: python ${{ github.action_path }}/main.py
