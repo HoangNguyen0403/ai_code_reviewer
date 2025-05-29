@@ -1,7 +1,6 @@
 import os
 
-import _review_code_github
-import _review_code_gitlab
+from ai_pr_review import _review_code_github,_review_code_gitlab  
 
 PLATFORM_HANDLERS = {
     "github": _review_code_github.main,
