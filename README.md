@@ -53,7 +53,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - uses: HoangNguyen0403/gemini-ai-code-reviewer@v0.0.3
+      - uses: HoangNguyen0403/ai-pr-reviewer@v0.0.1
         with:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}

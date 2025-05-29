@@ -3,7 +3,7 @@ requires = ["setuptools>=80.0.0", "wheel"] # Or the specific latest stable versi
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "ai-code-reviewer"
+name = "ai-pr-reviewer"
 version = "0.0.1"
 description = "A cross-platform code review tool using Gemini AI for GitHub, GitLab, and Azure DevOps."
 authors = [
@@ -27,10 +27,10 @@ Homepage = "https://github.com/HoangNguyen0403"
 Repository = "https://github.com/HoangNguyen0403/ai_code_reviewer"
 
 [tool.setuptools.packages.find]
-where = ["src"] # Ensure your package 'ai_code_reviewer' is in an 'src' directory
+where = ["src"] # Ensure your package 'ai_pr_review' is in an 'src' directory
 
 [tool.setuptools]
 package-dir = {"" = "src"} # This should align with find.where
 
 [tool.setuptools.package-data]
-"ai_code_reviewer" = ["*.json", "*.md"]
+"ai_pr_review" = ["*.json", "*.md"]
