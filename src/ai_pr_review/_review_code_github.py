@@ -44,6 +44,8 @@ def main():
     owner, repo, pull_number = get_pr_details(event_path)
     pr_title, pr_description = get_pr_metadata(owner, repo, pull_number)
     diff = get_diff(owner, repo, pull_number)
+    model = os.environ["AI_MODEL"]
+
     print(f"Diff Github: {diff}")
     analyze_code(
         diff=diff,
@@ -51,7 +53,8 @@ def main():
         pr_description=pr_description,
         api_key=GEMINI_API_KEY,
         output_file=OUTPUT_FILE,
-        platform="github"
+        platform="github",
+        model=model
     )
     print(f"Review comments written to {OUTPUT_FILE}")
 
