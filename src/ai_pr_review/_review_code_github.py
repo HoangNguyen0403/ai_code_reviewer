@@ -2,7 +2,7 @@ import os
 import json
 import requests
 from github import Github
-from utils.gemini_analyze import analyze_code
+from .utils.gemini_analyze import analyze_code
 
 GITHUB_TOKEN = os.environ["GITHUB_TOKEN"]
 GEMINI_API_KEY = os.environ["GEMINI_API_KEY"]

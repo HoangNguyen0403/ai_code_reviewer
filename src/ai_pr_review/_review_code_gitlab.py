@@ -1,6 +1,6 @@
 import os
 import requests
-from utils.gemini_analyze import analyze_code
+from .utils.gemini_analyze import analyze_code
 
 def get_pr_details(gitlab_url, project_id, mr_iid, private_token):
     headers = {"PRIVATE-TOKEN": private_token}
