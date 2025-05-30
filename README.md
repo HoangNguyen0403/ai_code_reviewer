@@ -15,7 +15,7 @@ A GitHub Action that automatically reviews pull requests using Google's Gemini A
 2. Add the Gemini API key as a GitHub Secret in your repository with the name `GEMINI_API_KEY`. You can find more
    information about GitHub Secrets [here](https://docs.github.com/en/actions/reference/encrypted-secrets).
 
-3. Create a `.github/workflows/code-review.yml` file in your repository and add the following content:
+3. Create a `.github/workflows/code-reviewer-action.yml` file in your repository and add the following content:
 
 ```yaml
 name: Gemini AI Code Reviewer
@@ -23,48 +23,32 @@ name: Gemini AI Code Reviewer
 on:
   issue_comment:
     types: [created]
-
 permissions: write-all
-
 jobs:
   gemini-code-review:
     runs-on: ubuntu-latest
     if: |
       github.event.issue.pull_request &&
-      contains(github.event.comment.body, '/gemini-review')
+      contains(github.event.comment.body, '/ai-review')
     steps:
-      - name: PR Info
-        run: |
-          echo "Comment: ${{ github.event.comment.body }}"
-          echo "Issue Number: ${{ github.event.issue.number }}"
-          echo "Repository: ${{ github.repository }}"
-
       - name: Checkout Repo
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
 
-      - name: Get PR Details
-        id: pr
-        run: |
-          PR_JSON=$(gh api repos/${{ github.repository }}/pulls/${{ github.event.issue.number }})
-          echo "head_sha=$(echo $PR_JSON | jq -r .head.sha)" >> $GITHUB_OUTPUT
-          echo "base_sha=$(echo $PR_JSON | jq -r .base.sha)" >> $GITHUB_OUTPUT
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - uses: HoangNguyen0403/ai-pr-reviewer@v0.0.1
+      - name: Run Gemini AI Code Reviewer
+        uses: HoangNguyen0403/ai-code-review@v2
         with:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          GEMINI_MODEL: gemini-1.5-pro-002 # Optional, default is `gemini-1.5-flash-002`
-          FILES_EXCLUDE: "*.md,*.txt,package-lock.json,*.yml,*.yaml"
+          AI_MODEL: 'gemini-2.5-flash-preview-05-20'  # Optional
+          FILES_EXCLUDE: ['**/node_modules/**', '**/dist/**', '**/build/**'] # Optional
 ```
 
-> if you don't set `GEMINI_MODEL`, the default model is `gemini-1.5-flash-002`. `gemini-1.5-flash-002` can be used for generating code, extracting data, edit text, and more. Best for tasks balancing performance and cost. For the detailed information about the models, please refer to [Gemini models](https://ai.google.dev/gemini-api/docs/models/gemini).
+> if you don't set `GEMINI_MODEL`, the default model is `gemini-2.0-flash`. `gemini-2.0-flash` can be used for generating code, extracting data, edit text, and more. Best for tasks balancing performance and cost. For the detailed information about the models, please refer to [Gemini models](https://ai.google.dev/gemini-api/docs/models/gemini).
 
 4. Commit codes to your repository, and working on your pull requests.
-5. When you're ready to review the PR, you can trigger the workflow by commenting `/gemini-review` in the PR.
+5. When you're ready to review the PR, you can trigger the workflow by commenting `/ai-review` in the PR.
 
 ## How It Works
 
