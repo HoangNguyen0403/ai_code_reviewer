@@ -13,11 +13,9 @@ jobs:
     steps:
       - name: Checkout Repo
         uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
 
       - name: Run Gemini AI Code Reviewer
-        uses: HoangNguyen0403/ai_code_reviewer@github-v0.0.1
+        uses: HoangNguyen0403/ai_code_reviewer@latest
         with:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
