@@ -23,9 +23,10 @@ jobs:
 
       - name: Install ai reviewer package
         run: |
-          pip install -i https://test.pypi.org/simple/ ai-pr-reviewer
+          python -m pip install --upgrade pip
+          pip install --no-cache-dir --upgrade -i https://test.pypi.org/simple/ ai-pr-reviewer
 
-      - name: Run Gemini AI Code Reviewer
+      - name: Run AI PR Reviewer
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
