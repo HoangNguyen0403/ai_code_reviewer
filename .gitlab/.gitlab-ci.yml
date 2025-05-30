@@ -1,0 +1,28 @@
+workflow:
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_EVENT_TYPE == "opened"' # Or synchronize etc.
+      when: always # Trigger on PR open/update if you want baseline analysis
+stages:
+  - code-review
+
+gemini_code_review:
+  stage: code-review
+  image: python:3.10
+  before_script:
+    - python -m pip install --upgrade pip
+    - pip install ai-pr-reviewer
+  variables:
+    GITLAB_PROJECT_ID: "123456"
+    GITLAB_URL: "https://git.vmo.dev"
+    GITLAB_MR_IID: "$CI_MERGE_REQUEST_IID"
+    GITLAB_TOKEN: "$CI_JOB_TOKEN"
+    GEMINI_API_KEY: "$GEMINI_API_KEY"
+  script:
+    - |
+      latest_comment=$(python -c "import gitlab; gl = gitlab.Gitlab('$GITLAB_URL', private_token='$GITLAB_TOKEN'); mr = gl.projects.get($CI_PROJECT_ID).mergerequests.get($CI_MERGE_REQUEST_IID); notes = mr.notes.list(order_by='created_at', sort='desc'); print(notes[0].body if notes else '')")
+      echo "Latest comment: $latest_comment"
+      if [[ "$latest_comment" != *"/ai-pr-reviewer"* ]]; then
+        echo "No /ai-pr-reviewer comment found. Skipping job."
+        exit 0
+      fi
+    - ai-pr-reviewer
