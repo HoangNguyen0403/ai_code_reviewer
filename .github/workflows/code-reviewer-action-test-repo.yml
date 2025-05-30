@@ -23,7 +23,7 @@ jobs:
 
       - name: Install ai reviewer package
         run: |
-          pip install -i https://test.pypi.org/simple/ ai-pr-reviewer
+          pip install -i https://test.pypi.org/simple/ai-pr-reviewer
 
       - name: Run Gemini AI Code Reviewer
         env:
