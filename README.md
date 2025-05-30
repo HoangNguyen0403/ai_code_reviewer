@@ -17,6 +17,8 @@ A GitHub Action that automatically reviews pull requests using Google's Gemini A
 
 3. Create a `.github/workflows/code-reviewer-action.yml` file in your repository and add the following content:
 
+Github action:
+
 ```yaml
 name: Gemini AI Code Reviewer
 
@@ -43,6 +45,39 @@ jobs:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           AI_MODEL: 'gemini-2.5-flash-preview-05-20'  # Optional
           FILES_EXCLUDE: ['**/node_modules/**', '**/dist/**', '**/build/**'] # Optional
+```
+
+Gitlab CI:
+
+```yaml
+workflow:
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_EVENT_TYPE == "opened"' # Or synchronize etc.
+      when: always # Trigger on PR open/update if you want baseline analysis
+stages:
+  - code-review
+
+gemini_code_review:
+  stage: code-review
+  image: python:3.10
+  before_script:
+    - python -m pip install --upgrade pip
+    - pip install ai-pr-reviewer
+  variables:
+    GITLAB_PROJECT_ID: "123456"
+    GITLAB_URL: "https://git.vmo.dev"
+    GITLAB_MR_IID: "$CI_MERGE_REQUEST_IID"
+    GITLAB_TOKEN: "$CI_JOB_TOKEN"
+    GEMINI_API_KEY: "$GEMINI_API_KEY"
+  script:
+    - |
+      latest_comment=$(python -c "import gitlab; gl = gitlab.Gitlab('$GITLAB_URL', private_token='$GITLAB_TOKEN'); mr = gl.projects.get($CI_PROJECT_ID).mergerequests.get($CI_MERGE_REQUEST_IID); notes = mr.notes.list(order_by='created_at', sort='desc'); print(notes[0].body if notes else '')")
+      echo "Latest comment: $latest_comment"
+      if [[ "$latest_comment" != *"/ai-pr-reviewer"* ]]; then
+        echo "No /ai-pr-reviewer comment found. Skipping job."
+        exit 0
+      fi
+    - ai-pr-reviewer
 ```
 
 > if you don't set `GEMINI_MODEL`, the default model is `gemini-2.0-flash`. `gemini-2.0-flash` can be used for generating code, extracting data, edit text, and more. Best for tasks balancing performance and cost. For the detailed information about the models, please refer to [Gemini models](https://ai.google.dev/gemini-api/docs/models/gemini).
