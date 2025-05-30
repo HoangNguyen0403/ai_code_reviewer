@@ -1,4 +1,4 @@
-name: "AI Reviewer"
+name: "AI PR Reviewer"
 description: "This GitHub Action automatically reviews PRs using Google's Gemini AI model."
 author: 'hoangnh'
 
@@ -9,10 +9,10 @@ inputs:
   GEMINI_API_KEY:
     description: 'Google Gemini API key'
     required: true
-  GEMINI_MODEL:
+  AI_MODEL:
     description: 'The Gemini model to use for code review'
     required: false
-    default: 'gemini-1.5-flash-002'
+    default: 'gemini-2.5-flash-preview-05-20'
   FILES_EXCLUDE:
     description: 'Comma-separated list of file patterns to exclude. Default excludes: *.md,*.txt,package-lock.json,pubspec.yaml,*.g.dart,*.freezed.dart,*.gr.dart,*.json,*.graphql'
     required: false
@@ -30,12 +30,14 @@ runs:
       shell: bash
       run: |
         python -m pip install --upgrade pip
-        pip install google-generativeai PyGithub unidiff google-ai-generativelanguage==0.6.10 github3.py==1.3.0
+        pip install ai-pr-reviewer
 
-    - name: Run code review
+    - name: Run AI PR Reviewer
       shell: bash
       env:
         GITHUB_TOKEN: ${{ inputs.GITHUB_TOKEN }}
         GEMINI_API_KEY: ${{ inputs.GEMINI_API_KEY }}
         FILES_EXCLUDE: ${{ inputs.FILES_EXCLUDE }}
-      run: python ${{ github.action_path }}/main.py
+        GIT_PLATFORM: github
+        AI_MODEL: ${{ inputs.AI_MODEL }}
+      run: ai-pr-reviewer

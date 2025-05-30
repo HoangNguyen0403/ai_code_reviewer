@@ -1,0 +1,34 @@
+name: Gemini AI Code Reviewer
+
+on:
+  issue_comment:
+    types: [created]
+permissions: write-all
+jobs:
+  gemini-code-review:
+    runs-on: ubuntu-latest
+    if: |
+      github.event.issue.pull_request &&
+      contains(github.event.comment.body, '/ai-review-test')
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install ai reviewer package
+        run: |
+          pip install -i https://test.pypi.org/simple/ai-pr-reviewer
+
+      - name: Run Gemini AI Code Reviewer
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GIT_PLATFORM: github
+          AI_MODEL: gemini-2.5-flash-preview-05-20
+        run: ai-pr-reviewer
