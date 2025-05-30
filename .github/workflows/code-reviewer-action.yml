@@ -17,7 +17,7 @@ jobs:
           fetch-depth: 0
 
       - name: Run Gemini AI Code Reviewer
-        uses: HoangNguyen0403/ai-code-review@v2
+        uses: HoangNguyen0403/ai-code-review@latest
         with:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
