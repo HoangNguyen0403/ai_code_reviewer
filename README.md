@@ -17,72 +17,103 @@ A GitHub Action that automatically reviews pull requests using Google's Gemini A
 
 3. Create a `.github/workflows/code-reviewer-action.yml` file in your repository and add the following content:
 
-Github action:
+- Github action:
 
-```yaml
-name: Gemini AI Code Reviewer
+  ```yaml
+  name: Gemini AI Code Reviewer
 
-on:
-  issue_comment:
-    types: [created]
-permissions: write-all
-jobs:
-  gemini-code-review:
-    runs-on: ubuntu-latest
-    if: |
-      github.event.issue.pull_request &&
-      contains(github.event.comment.body, '/ai-review')
-    steps:
-      - name: Checkout Repo
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
+  on:
+    issue_comment:
+      types: [created]
+  permissions: write-all
+  jobs:
+    gemini-code-review:
+      runs-on: ubuntu-latest
+      if: |
+        github.event.issue.pull_request &&
+        contains(github.event.comment.body, '/ai-review')
+      steps:
+        - name: Checkout Repo
+          uses: actions/checkout@v3
 
-      - name: Run Gemini AI Code Reviewer
-        uses: HoangNguyen0403/ai-code-review@v2
-        with:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          AI_MODEL: 'gemini-2.5-flash-preview-05-20'  # Optional
-          FILES_EXCLUDE: ['**/node_modules/**', '**/dist/**', '**/build/**'] # Optional
-```
+        - name: Run Gemini AI Code Reviewer
+          uses: HoangNguyen0403/ai_code_reviewer@latest
+          with:
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+            GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+            AI_MODEL: 'gemini-2.5-flash-preview-05-20' # Optional
+            FILES_EXCLUDE: ['**/node_modules/**', '**/dist/**', '**/build/**'] # Optional
+  ```
 
-Gitlab CI:
+- Gitlab CI:
 
-```yaml
-workflow:
-  rules:
-    - if: '$CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_EVENT_TYPE == "opened"' # Or synchronize etc.
-      when: always # Trigger on PR open/update if you want baseline analysis
-stages:
-  - code-review
+  ```yaml
+  workflow:
+    rules:
+      - if: '$CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_EVENT_TYPE == "opened"' # Or synchronize etc.
+        when: always # Trigger on PR open/update if you want baseline analysis
+  stages:
+    - code-review
 
-gemini_code_review:
-  stage: code-review
-  image: python:3.10
-  before_script:
-    - python -m pip install --upgrade pip
-    - pip install ai-pr-reviewer
-  variables:
-    GITLAB_PROJECT_ID: "123456"
-    GITLAB_URL: "https://git.vmo.dev"
-    GITLAB_MR_IID: "$CI_MERGE_REQUEST_IID"
-    GITLAB_TOKEN: "$CI_JOB_TOKEN"
-    GEMINI_API_KEY: "$GEMINI_API_KEY"
-  script:
-    - |
-      latest_comment=$(python -c "import gitlab; gl = gitlab.Gitlab('$GITLAB_URL', private_token='$GITLAB_TOKEN'); mr = gl.projects.get($CI_PROJECT_ID).mergerequests.get($CI_MERGE_REQUEST_IID); notes = mr.notes.list(order_by='created_at', sort='desc'); print(notes[0].body if notes else '')")
-      echo "Latest comment: $latest_comment"
-      if [[ "$latest_comment" != *"/ai-pr-reviewer"* ]]; then
-        echo "No /ai-pr-reviewer comment found. Skipping job."
-        exit 0
-      fi
-    - ai-pr-reviewer
-```
+  gemini_code_review:
+    stage: code-review
+    image: python:3.10
+    before_script:
+      - python -m pip install --upgrade pip
+      - pip install --no-cache-dir --upgrade ai-pr-reviewer
+    variables:
+      GITLAB_API_URL: "https://gitlab.com/api/v4"
+      CI_PROJECT_NAMESPACE: "$CI_PROJECT_NAMESPACE"
+      CI_PROJECT_ID: "$CI_PROJECT_ID"
+      CI_MERGE_REQUEST_IID: "$CI_MERGE_REQUEST_IID"
+      GITLAB_TOKEN: "$CI_JOB_TOKEN"
+      GEMINI_API_KEY: "$GEMINI_API_KEY"
+      AI_MODEL: "gemini-2.5-flash-preview-05-20" # Optional
+      FILES_EXCLUDE: "['**/node_modules/**', '**/dist/**', '**/build/**']" # Optional
+    script:
+      - |
+        latest_comment=$(python -c "import gitlab; gl = gitlab.Gitlab('$GITLAB_URL', private_token='$GITLAB_TOKEN'); mr = gl.projects.get($CI_PROJECT_ID).mergerequests.get($CI_MERGE_REQUEST_IID); notes = mr.notes.list(order_by='created_at', sort='desc'); print(notes[0].body if notes else '')")
+        echo "Latest comment: $latest_comment"
+        if [[ "$latest_comment" != *"/ai-pr-reviewer"* ]]; then
+          echo "No /ai-pr-reviewer comment found. Skipping job."
+          exit 0
+        fi
+      - ai-pr-reviewer gitlab
+  ```
+
+- Azure Devops CI:
+
+  ```yaml
+  trigger: none  # Prevents automatic triggers; pipeline is run manually or via REST API
+  pr: none
+
+  pool:
+    vmImage: 'ubuntu-latest'
+
+  steps:
+    - task: UsePythonVersion@0
+      inputs:
+        versionSpec: '3.10'
+    - script: |
+        python -m pip install --upgrade pip
+        pip install --no-cache-dir --upgrade ai-pr-reviewer
+        ai-pr-reviewer azure
+      displayName: 'Run AI PR Reviewer'
+      env:
+        AZURE_ORG_URL: $(AZURE_ORG_URL)
+        AZURE_PROJECT: $(AZURE_PROJECT)
+        AZURE_REPO_ID: $(AZURE_REPO_ID)
+        AZURE_PULL_REQUEST_ID: $(AZURE_PULL_REQUEST_ID)
+        AZURE_PAT: $(AZURE_PAT)
+        GEMINI_API_KEY: $(GEMINI_API_KEY)
+        AI_MODEL: "gemini-2.5-flash-preview-05-20" # Optional
+        FILES_EXCLUDE: "['**/node_modules/**', '**/dist/**', '**/build/**']" # Optional      
+  ```
 
 > if you don't set `GEMINI_MODEL`, the default model is `gemini-2.0-flash`. `gemini-2.0-flash` can be used for generating code, extracting data, edit text, and more. Best for tasks balancing performance and cost. For the detailed information about the models, please refer to [Gemini models](https://ai.google.dev/gemini-api/docs/models/gemini).
 
 4. Commit codes to your repository, and working on your pull requests.
+
 5. When you're ready to review the PR, you can trigger the workflow by commenting `/ai-review` in the PR.
 
 ## How It Works

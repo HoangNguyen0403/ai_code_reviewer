@@ -1,17 +1,23 @@
+import fnmatch
+import json
 import os
+from typing import Any, Dict, List
 
 import requests
-import json
-from typing import List, Dict, Any
 
-def create_prompt(diff: str, pr_title: str, pr_description: str, platform: str = "generic") -> str:
+EXCLUDE_PATTERN_DEFAULT = "*.md,*.txt,package-lock.json,pubspec.yaml,*.g.dart,*.freezed.dart,*.gr.dart,*.json,*.graphql"
+
+
+def create_prompt(
+    diff: str, pr_title: str, pr_description: str, platform: str = "generic"
+) -> str:
     external_rules = os.environ.get("OTHER_REVIEW_RULES", "")
     prompt = (
         f"You are an expert software engineer performing a code review for a pull/merge request on {platform}.\n"
         f"PR Title: {pr_title}\n"
         f"PR Description: {pr_description}\n"
         f"Diff:\n{diff}\n"
-        f"Additional Review Rules:\n{external_rules}\n"        
+        f"Additional Review Rules:\n{external_rules}\n"
         "Please review the code changes according to the following criteria, following best practices:\n"
         "1. **Correctness**: Does the code do what it claims? Are there any logic errors, bugs, or missing edge cases?\n"
         "2. **Security**: Are there any vulnerabilities, unsafe patterns, or risks of data leaks?\n"
@@ -26,7 +32,10 @@ def create_prompt(diff: str, pr_title: str, pr_description: str, platform: str =
     )
     return prompt
 
-def get_ai_response(prompt: str, api_key: str, model: str = "gemini-pro") -> List[Dict[str, Any]]:
+
+def get_ai_response(
+    prompt: str, api_key: str, model: str = "gemini-pro"
+) -> List[Dict[str, Any]]:
     """
     Send the prompt to Gemini API and parse the JSON response as a list of comments.
     """
@@ -45,12 +54,35 @@ def get_ai_response(prompt: str, api_key: str, model: str = "gemini-pro") -> Lis
     except Exception as e:
         raise RuntimeError(f"Failed to parse Gemini response: {e}")
 
+
 def create_review_comment(comment: Dict[str, Any], output_file: str) -> None:
     """
     Write a single review comment to the output file in JSONL format.
     """
     with open(output_file, "a") as f:
         f.write(json.dumps(comment) + "\n")
+
+
+def filter_diff(diff: str, exclude_patterns: list) -> str:
+    filtered = []
+    current_file = None
+    exclude = False
+    for line in diff.splitlines(keepends=True):
+        if line.startswith("diff --git"):
+            parts = line.split(" b/")
+            if len(parts) > 1:
+                current_file = parts[1].strip()
+                exclude = any(
+                    fnmatch.fnmatch(current_file, pat.strip())
+                    for pat in exclude_patterns
+                )
+            else:
+                current_file = None
+                exclude = False
+        if not exclude:
+            filtered.append(line)
+    return "".join(filtered)
+
 
 def analyze_code(
     diff: str,
@@ -59,12 +91,18 @@ def analyze_code(
     api_key: str,
     output_file: str,
     platform: str = "generic",
-    model: str = "gemini-pro"
+    model: str = "gemini-pro",
 ) -> None:
     """
     Analyze the code diff using Gemini and write review comments to the output file.
     """
-    prompt = create_prompt(diff, pr_title, pr_description, platform)
+    env_patterns = os.environ.get("FILES_EXCLUDE", "")
+    all_patterns = EXCLUDE_PATTERN_DEFAULT
+    if env_patterns:
+        all_patterns += "," + env_patterns
+    exclude_patterns = [p.strip() for p in all_patterns.split(",") if p.strip()]
+    filtered_diff = filter_diff(diff, exclude_patterns)
+    prompt = create_prompt(filtered_diff, pr_title, pr_description, platform)
     comments = get_ai_response(prompt, api_key, model)
     for comment in comments:
         create_review_comment(comment, output_file)
