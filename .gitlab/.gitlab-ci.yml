@@ -10,13 +10,15 @@ gemini_code_review:
   image: python:3.10
   before_script:
     - python -m pip install --upgrade pip
-    - pip install ai-pr-reviewer
+    - pip install --no-cache-dir --upgrade ai-pr-reviewer
   variables:
-    GITLAB_PROJECT_ID: "123456"
-    GITLAB_URL: "https://git.vmo.dev"
-    GITLAB_MR_IID: "$CI_MERGE_REQUEST_IID"
+    GITLAB_API_URL: "https://gitlab.com/api/v4"
+    CI_PROJECT_NAMESPACE: "$CI_PROJECT_NAMESPACE"
+    CI_PROJECT_ID: "$CI_PROJECT_ID"
+    CI_MERGE_REQUEST_IID: "$CI_MERGE_REQUEST_IID"
     GITLAB_TOKEN: "$CI_JOB_TOKEN"
     GEMINI_API_KEY: "$GEMINI_API_KEY"
+    AI_MODEL: "gemini-2.5-flash-preview-05-20"
   script:
     - |
       latest_comment=$(python -c "import gitlab; gl = gitlab.Gitlab('$GITLAB_URL', private_token='$GITLAB_TOKEN'); mr = gl.projects.get($CI_PROJECT_ID).mergerequests.get($CI_MERGE_REQUEST_IID); notes = mr.notes.list(order_by='created_at', sort='desc'); print(notes[0].body if notes else '')")
@@ -25,4 +27,4 @@ gemini_code_review:
         echo "No /ai-pr-reviewer comment found. Skipping job."
         exit 0
       fi
-    - ai-pr-reviewer
+    - ai-pr-reviewer gitlab

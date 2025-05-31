@@ -35,9 +35,11 @@ runs:
     - name: Run AI PR Reviewer
       shell: bash
       env:
+        GITHUB_API_URL: https://api.github.com
+        GITHUB_REPOSITORY: ${{ github.repository }}
+        GITHUB_PULL_REQUEST_ID: ${{ github.event.pull_request.number }}
         GITHUB_TOKEN: ${{ inputs.GITHUB_TOKEN }}
         GEMINI_API_KEY: ${{ inputs.GEMINI_API_KEY }}
-        FILES_EXCLUDE: ${{ inputs.FILES_EXCLUDE }}
-        GIT_PLATFORM: github
         AI_MODEL: ${{ inputs.AI_MODEL }}
-      run: ai-pr-reviewer
+        FILES_EXCLUDE: ${{ inputs.FILES_EXCLUDE }}
+      run: ai-pr-reviewer github

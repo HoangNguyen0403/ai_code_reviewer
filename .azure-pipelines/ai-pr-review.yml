@@ -1,0 +1,22 @@
+trigger: none  # Prevents automatic triggers; pipeline is run manually or via REST API
+pr: none
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+steps:
+  - task: UsePythonVersion@0
+    inputs:
+      versionSpec: '3.10'
+  - script: |
+      python -m pip install --upgrade pip
+      pip install --no-cache-dir --upgrade ai-pr-reviewer
+      ai-pr-reviewer azure
+    displayName: 'Run AI PR Reviewer'
+    env:
+      AZURE_ORG_URL: $(AZURE_ORG_URL)
+      AZURE_PROJECT: $(AZURE_PROJECT)
+      AZURE_REPO_ID: $(AZURE_REPO_ID)
+      AZURE_PULL_REQUEST_ID: $(AZURE_PULL_REQUEST_ID)
+      AZURE_PAT: $(AZURE_PAT)
+      GEMINI_API_KEY: $(GEMINI_API_KEY)
