@@ -96,7 +96,7 @@ async def run_ai_review_process(platform: str):
     #     print(f"{platform} Commented at {comment['file']}: {commentResponse}")
 
 
-def main():
+async def main():
     parser = argparse.ArgumentParser(
         description="Run AI code review for a given platform."
     )
@@ -106,7 +106,7 @@ def main():
     args = parser.parse_args()
 
     try:
-        run_ai_review_process(args.platform)
+        await run_ai_review_process(args.platform)
     except EnvironmentError as e:
         print(f"Configuration Error: {e}")
     except ValueError as e:
