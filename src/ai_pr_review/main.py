@@ -1,5 +1,4 @@
 import argparse
-import asyncio
 import json
 
 from .clients import AzureDevOpsClient, GitHubClient, GitLabClient, PullRequestClient
@@ -116,4 +115,6 @@ async def main():
 
 
 if __name__ == "__main__":
+    import asyncio
+
     asyncio.run(main())
