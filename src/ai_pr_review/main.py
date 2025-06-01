@@ -114,7 +114,7 @@ async def main():
         print(f"An unexpected error occurred: {e}")
 
 
-if __name__ == "__main__":
+def cli_entry():
     import asyncio
 
     asyncio.run(main())
