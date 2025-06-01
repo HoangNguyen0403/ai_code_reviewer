@@ -3,7 +3,8 @@ import json
 import os
 from typing import Any, Dict, List
 
-import requests
+import aiofiles
+import aiohttp
 
 EXCLUDE_PATTERN_DEFAULT = "*.md,*.txt,package-lock.json,pubspec.yaml,*.g.dart,*.freezed.dart,*.gr.dart,*.json,*.graphql"
 
@@ -33,8 +34,8 @@ def create_prompt(
     return prompt
 
 
-def get_ai_response(
-    prompt: str, api_key: str, model: str = "gemini-pro"
+async def get_ai_response(
+    prompt: str, api_key: str, model: str
 ) -> List[Dict[str, Any]]:
     """
     Send the prompt to Gemini API and parse the JSON response as a list of comments.
@@ -42,25 +43,29 @@ def get_ai_response(
     url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
     headers = {"Content-Type": "application/json"}
     data = {"contents": [{"parts": [{"text": prompt}]}]}
-    response = requests.post(url, headers=headers, data=json.dumps(data), timeout=60)
-    response.raise_for_status()
-    try:
-        candidates = response.json()["candidates"]
-        content = candidates[0]["content"]["parts"][0]["text"]
-        comments = json.loads(content)
-        if not isinstance(comments, list):
-            raise ValueError("AI response is not a list")
-        return comments
-    except Exception as e:
-        raise RuntimeError(f"Failed to parse Gemini response: {e}")
+    async with aiohttp.ClientSession() as session:
+        async with session.post(
+            url, headers=headers, data=json.dumps(data), timeout=60
+        ) as response:
+            response.raise_for_status()
+            resp_json = await response.json()
+            try:
+                candidates = resp_json["candidates"]
+                content = candidates[0]["content"]["parts"][0]["text"]
+                comments = json.loads(content)
+                if not isinstance(comments, list):
+                    raise ValueError("AI response is not a list")
+                return comments
+            except Exception as e:
+                raise RuntimeError(f"Failed to parse Gemini response: {e}")
 
 
-def create_review_comment(comment: Dict[str, Any], output_file: str) -> None:
+async def create_review_comment(comment: Dict[str, Any], output_file: str) -> None:
     """
     Write a single review comment to the output file in JSONL format.
     """
-    with open(output_file, "a") as f:
-        f.write(json.dumps(comment) + "\n")
+    async with aiofiles.open(output_file, "a") as f:
+        await f.write(json.dumps(comment) + "\n")
 
 
 def filter_diff(diff: str, exclude_patterns: list) -> str:
@@ -84,14 +89,14 @@ def filter_diff(diff: str, exclude_patterns: list) -> str:
     return "".join(filtered)
 
 
-def analyze_code(
+async def analyze_code(
     diff: str,
     pr_title: str,
     pr_description: str,
     api_key: str,
     output_file: str,
+    model: str,
     platform: str = "generic",
-    model: str = "gemini-pro",
 ) -> None:
     """
     Analyze the code diff using Gemini and write review comments to the output file.
@@ -102,7 +107,9 @@ def analyze_code(
         all_patterns += "," + env_patterns
     exclude_patterns = [p.strip() for p in all_patterns.split(",") if p.strip()]
     filtered_diff = filter_diff(diff, exclude_patterns)
+    print(f"AI Filtered Diff {filtered_diff}")
     prompt = create_prompt(filtered_diff, pr_title, pr_description, platform)
-    comments = get_ai_response(prompt, api_key, model)
+    comments = await get_ai_response(prompt, api_key, model)
+    print(f"AI Comment {comments}")
     for comment in comments:
-        create_review_comment(comment, output_file)
+        await create_review_comment(comment, output_file)

@@ -3,7 +3,6 @@ from abc import ABC, abstractmethod
 from typing import Tuple
 
 
-
 class PullRequestClient(ABC):
     """
     Abstract Base Class for Git platform Pull Request clients.
@@ -17,7 +16,7 @@ class PullRequestClient(ABC):
         self.auth_token = auth_token  # Generic term for authentication token
 
     @abstractmethod
-    def get_pr_details(self, pr_id: str) -> Tuple[str, str, str, str]:
+    async def get_pr_details(self, pr_id: str) -> Tuple[str, str, str, str]:
         """
         Fetches details for a given Pull Request ID.
 
@@ -27,7 +26,7 @@ class PullRequestClient(ABC):
         pass
 
     @abstractmethod
-    def get_pr_diff(self, pr_id: str) -> str:
+    async def get_pr_diff(self, pr_id: str) -> str:
         """
         Fetches the diff content for a given Pull Request ID.
 
@@ -37,7 +36,7 @@ class PullRequestClient(ABC):
         pass
 
     @abstractmethod
-    def post_comment(self, pr_id: str, thread_id: int, content: str) -> dict:
+    async def post_comment(self, pr_id: str, thread_id: int, content: str) -> dict:
         """
         Posts a comment to a specific thread on a Pull Request.
 
