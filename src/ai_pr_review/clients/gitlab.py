@@ -76,6 +76,6 @@ class GitLabClient(PullRequestClient):
                 "new_path": file_path,
                 "new_line": line,
                 "head_sha": head_sha,
-                "base_sha": "base_sha",
+                "base_sha": base_sha,
             },
         }
