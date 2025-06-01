@@ -1,3 +1,4 @@
+import traceback
 from typing import Tuple
 
 import aiohttp
@@ -14,7 +15,7 @@ class GitLabClient(PullRequestClient):
         self.api_base = org_url.rstrip("/")
         self.project_id = repo_id  # Numeric project ID for GitLab
 
-    async def get_pr_details(self, pr_id: str) -> Tuple[str, str, str, str, str]:
+    async def get_pr_details(self, pr_id: str) -> Tuple[str, str, str, str, str, str]:
         pr_url = (
             f"{self.api_base}/api/v4/projects/{self.project_id}/merge_requests/{pr_id}"
         )
@@ -29,6 +30,7 @@ class GitLabClient(PullRequestClient):
                     pr_data["source_branch"],
                     pr_data["target_branch"],
                     pr_data["diff_refs"]["head_sha"],
+                    pr_data["diff_refs"]["base_sha"],
                 )
 
     async def get_pr_diff(self, pr_id: str) -> str:
@@ -50,13 +52,22 @@ class GitLabClient(PullRequestClient):
             "body": body,
             "position": position,
         }
-        async with aiohttp.ClientSession(headers=self.headers) as session:
-            async with session.post(url, json=data) as response:
-                response.raise_for_status()
-                return await response.json()
+        try:
+            async with aiohttp.ClientSession(headers=self.headers) as session:
+                async with session.post(url, json=data) as response:
+                    response.raise_for_status()
+                    return await response.json()
+        except Exception as e:
+            print(f"Error posting comment: {e}")
+            traceback.print_exc()
 
     def format_comment_payload(
-        self, file_path: str, line: int, message: str, head_sha: str
+        self,
+        file_path: str,
+        line: int,
+        message: str,
+        head_sha: str,
+        base_sha: str,
     ) -> dict:
         return {
             "body": message,
@@ -65,5 +76,6 @@ class GitLabClient(PullRequestClient):
                 "new_path": file_path,
                 "new_line": line,
                 "head_sha": head_sha,
+                "base_sha": "base_sha",
             },
         }

@@ -114,6 +114,7 @@ async def analyze_code(
         source_branch,
         target_branch,
         head_sha,
+        base_sha,
     ) = await client.get_pr_details(pr_id)
     diff = await client.get_pr_diff(pr_id)
     env_patterns = os.environ.get("FILES_EXCLUDE", "")
@@ -131,6 +132,7 @@ async def analyze_code(
             line=comment["line"],
             message=f"**Gemini AI Suggestion**\n- Severity: {comment['severity']}\n- Category: {comment['category']}\n- Suggestion: {comment['suggestion']}\n- Rationale: {comment['rationale']}",
             head_sha=head_sha,
+            base_sha=base_sha,
         )
         formatedComments.append(formatedComment)
 
