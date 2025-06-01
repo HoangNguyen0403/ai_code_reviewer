@@ -30,6 +30,5 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          GIT_PLATFORM: github
           AI_MODEL: gemini-2.5-flash-preview-05-20
-        run: ai-pr-reviewer
+        run: ai-pr-reviewer github

@@ -1,9 +1,9 @@
 import os
 
 
-def get_env_var(name: str) -> str:
+def get_env_var(name: str, default: str = None) -> str:
     """Loads a required environment variable."""
-    value = os.environ.get(name)
+    value = os.environ.get(name, default)
     if not value:
         raise EnvironmentError(f"Missing required environment variable: {name}")
     return value
@@ -14,9 +14,9 @@ def load_config(platform: str):
     config = {
         "GEMINI_API_KEY": get_env_var("GEMINI_API_KEY"),
         "OUTPUT_FILE": get_env_var(
-            "OUTPUT_FILE", "gemini_review.json"
+            "OUTPUT_FILE", default="gemini_review.json"
         ),  # Optional env var with default
-        "AI_MODEL": get_env_var("AI_MODEL", "gemini-2.0-flash"),
+        "AI_MODEL": get_env_var("AI_MODEL", default="gemini-2.0-flash"),
     }
 
     if platform.lower() == "azure":
