@@ -49,8 +49,6 @@ async def get_ai_response(
         ) as response:
             response.raise_for_status()
             resp_json = await response.json()
-            # Debug: print the raw response
-            print("Gemini API raw response:", resp_json)
             try:
                 candidates = resp_json.get("candidates")
                 if not candidates or not candidates[0].get("content"):
@@ -62,11 +60,7 @@ async def get_ai_response(
                     raise RuntimeError(
                         f"Gemini API returned empty content: {resp_json}"
                     )
-                contentJsonParsed = parse_comments_from_text(content)
-                comments = json.loads(contentJsonParsed)
-                if not isinstance(comments, list):
-                    raise ValueError("AI response is not a list")
-                return comments
+                return parse_comments_from_content(content)
             except Exception as e:
                 print(f"Prompt sent to Gemini: {prompt}")
                 raise RuntimeError(f"Failed to parse Gemini response: {e}")
@@ -125,7 +119,7 @@ async def analyze_code(
         await create_review_comment(comment, output_file)
 
 
-def parse_comments_from_text(text) -> List[Dict[str, Any]]:
+def parse_comments_from_content(text) -> List[Dict[str, Any]]:
     # Remove code block markers if present
     if text.strip().startswith("```json"):
         text = text.strip()[7:]
