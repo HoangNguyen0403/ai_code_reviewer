@@ -13,9 +13,6 @@ def load_config(platform: str):
     """Loads configuration based on the specified platform."""
     config = {
         "GEMINI_API_KEY": get_env_var("GEMINI_API_KEY"),
-        "OUTPUT_FILE": get_env_var(
-            "OUTPUT_FILE", default="gemini_review.json"
-        ),  # Optional env var with default
         "AI_MODEL": get_env_var("AI_MODEL", default="gemini-2.0-flash"),
     }
 
@@ -28,7 +25,7 @@ def load_config(platform: str):
     elif platform.lower() == "github":
         config["ORG_URL"] = get_env_var(
             "GITHUB_API_URL"
-        )  # e.g., https://api.github.com
+        )  # e.g., [https://api.github.com](https://api.github.com)
         config["PROJECT"] = get_env_var("GITHUB_REPOSITORY").split("/")[0]  # Owner
         config["REPO_ID"] = get_env_var("GITHUB_REPOSITORY").split("/")[1]  # Repo name
         config["PR_ID"] = get_env_var("GITHUB_PULL_REQUEST_ID")
@@ -36,7 +33,7 @@ def load_config(platform: str):
     elif platform.lower() == "gitlab":
         config["ORG_URL"] = get_env_var(
             "GITLAB_API_URL"
-        )  # e.g., https://gitlab.com/api/v4
+        )  # e.g., [https://gitlab.com/api/v4](https://gitlab.com/api/v4)
         config["PROJECT"] = get_env_var("CI_PROJECT_NAMESPACE")  # Group/User
         config["REPO_ID"] = get_env_var("CI_PROJECT_ID")  # Project ID
         config["PR_ID"] = get_env_var("CI_MERGE_REQUEST_IID")  # Merge Request IID
