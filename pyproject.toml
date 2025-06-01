@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ai-pr-reviewer"
-version = "0.0.12"
+version = "0.0.13"
 description = "A cross-platform code review tool using Gemini AI for GitHub, GitLab, and Azure DevOps."
 authors = [
     { name = "Hoang Nguyen", email = "hoanghuynguyen0403@gmail.com" }

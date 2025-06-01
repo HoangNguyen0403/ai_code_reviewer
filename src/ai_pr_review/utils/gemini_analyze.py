@@ -73,7 +73,7 @@ async def create_review_comment(
     """
     Write a single review comment to the output file in JSONL format.
     """
-    async with open(output_file, "w") as f:
+    with open(output_file, "w") as f:
         json.dump(comments, f, indent=2)
 
 

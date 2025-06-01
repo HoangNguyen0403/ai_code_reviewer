@@ -64,9 +64,10 @@ async def run_ai_review_process(platform: str):
 
     # Post the comment back to the PR (for remote platforms)
     for comment in review_comments:
-        commentResponse = client.post_comment(
-            await client.post_comment(pr_id, comment["body"], comment["position"])
+        commentResponse = await client.post_comment(
+            pr_id, comment["body"], comment["position"]
         )
+
     print(f"{platform} Commented at {comment['file']}: {commentResponse}")
 
 
