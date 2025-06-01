@@ -50,7 +50,6 @@ async def run_ai_review_process(platform: str):
         diff = "Local diff content"
         pr_title = "Local Commit Title"
         pr_description = "Local Commit Description"
-        print(f"Running local review for commit {config.get('COMMIT_SHA', 'N/A')}")
     else:
         # Use the appropriate client for remote platforms
         client = get_client(platform, config)
@@ -62,7 +61,6 @@ async def run_ai_review_process(platform: str):
             target_branch,
         ) = await client.get_pr_details(pr_id)
         diff = await client.get_pr_diff(pr_id)
-        print(f"Fetched diff for {platform} PR {pr_id}")
         print(f"PR Diff {diff}")
 
         # Optional: Post a comment back to the PR

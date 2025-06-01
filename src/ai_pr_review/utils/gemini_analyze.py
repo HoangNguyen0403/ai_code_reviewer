@@ -49,14 +49,25 @@ async def get_ai_response(
         ) as response:
             response.raise_for_status()
             resp_json = await response.json()
+            # Debug: print the raw response
+            print("Gemini API raw response:", resp_json)
             try:
-                candidates = resp_json["candidates"]
-                content = candidates[0]["content"]["parts"][0]["text"]
+                candidates = resp_json.get("candidates")
+                if not candidates or not candidates[0].get("content"):
+                    raise RuntimeError(
+                        f"Gemini API returned no candidates or content: {resp_json}"
+                    )
+                content = candidates[0]["content"]["parts"][0].get("text", "")
+                if not content.strip():
+                    raise RuntimeError(
+                        f"Gemini API returned empty content: {resp_json}"
+                    )
                 comments = json.loads(content)
                 if not isinstance(comments, list):
                     raise ValueError("AI response is not a list")
                 return comments
             except Exception as e:
+                print(f"Prompt sent to Gemini: {prompt}")
                 raise RuntimeError(f"Failed to parse Gemini response: {e}")
 
 
@@ -107,9 +118,7 @@ async def analyze_code(
         all_patterns += "," + env_patterns
     exclude_patterns = [p.strip() for p in all_patterns.split(",") if p.strip()]
     filtered_diff = filter_diff(diff, exclude_patterns)
-    print(f"AI Filtered Diff {filtered_diff}")
     prompt = create_prompt(filtered_diff, pr_title, pr_description, platform)
     comments = await get_ai_response(prompt, api_key, model)
-    print(f"AI Comment {comments}")
     for comment in comments:
         await create_review_comment(comment, output_file)
