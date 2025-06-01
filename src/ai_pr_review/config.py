@@ -13,9 +13,10 @@ def load_config(platform: str):
     """Loads configuration based on the specified platform."""
     config = {
         "GEMINI_API_KEY": get_env_var("GEMINI_API_KEY"),
-        "OUTPUT_FILE": os.environ.get(
+        "OUTPUT_FILE": get_env_var(
             "OUTPUT_FILE", "gemini_review.json"
         ),  # Optional env var with default
+        "AI_MODEL": get_env_var("AI_MODEL", "gemini-2.0-flash"),
     }
 
     if platform.lower() == "azure":
@@ -42,7 +43,7 @@ def load_config(platform: str):
         config["AUTH_TOKEN"] = get_env_var("GITLAB_TOKEN")
     elif platform.lower() == "local":
         # Local mode might not need all these, or might get them differently
-        config["REPO_PATH"] = os.environ.get("LOCAL_REPO_PATH", ".")
+        config["REPO_PATH"] = get_env_var("LOCAL_REPO_PATH", ".")
         config["COMMIT_SHA"] = get_env_var("LOCAL_COMMIT_SHA")
         # Local mode doesn't need ORG_URL, PROJECT, REPO_ID, PR_ID, AUTH_TOKEN
         pass

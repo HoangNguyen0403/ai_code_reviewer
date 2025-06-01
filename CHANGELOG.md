@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## [0.0.3]
+
+- Allow to post comment to Gitlab, Github and Azure Devops after AI reviewed
+
 ## [0.0.2]
 
 - Add deployment for TestPyPI, allow run ai-pr-reviewer CLI

@@ -1,7 +1,6 @@
 from typing import Tuple
 
-import requests
-from github import Github
+import aiohttp
 
 from .base import PullRequestClient
 
@@ -14,30 +13,66 @@ class GitHubClient(PullRequestClient):
             f"{self.org_url}/{self.repo_id}" if self.org_url else self.repo_id
         )
 
-    def get_pr_details(self, pr_id: str) -> Tuple[str, str, str, str]:
-        gh = Github(self.auth_token)
-        repo_obj = gh.get_repo(self.repo_full_name)
-        pr = repo_obj.get_pull(int(pr_id))
-        return pr.title, pr.body, pr.head.ref, pr.base.ref
+    async def get_pr_details(self, pr_id: str) -> Tuple[str, str, str, str]:
+        # Direct HTTP call since PyGithub is not async
+        api_url = f"https://api.github.com/repos/{self.repo_full_name}/pulls/{pr_id}"
+        headers = self.headers.copy()
+        headers["Accept"] = "application/vnd.github+json"
+        async with aiohttp.ClientSession() as session:
+            async with session.get(api_url, headers=headers) as resp:
+                if resp.status != 200:
+                    raise RuntimeError(
+                        f"Failed to get PR details: {resp.status} {await resp.text()}"
+                    )
+                pr = await resp.json()
+                return pr["title"], pr["body"], pr["head"]["ref"], pr["base"]["ref"]
 
-    def get_pr_diff(self, pr_id: str) -> str:
+    async def get_pr_diff(self, pr_id: str) -> str:
         api_url = (
             f"https://api.github.com/repos/{self.repo_full_name}/pulls/{pr_id}.diff"
         )
         headers = self.headers.copy()
         headers["Accept"] = "application/vnd.github.v3.diff"
-        response = requests.get(api_url, headers=headers)
-        if response.status_code == 200:
-            return response.text
-        else:
-            raise RuntimeError(
-                f"Failed to get diff: {response.status_code} {response.text}"
-            )
+        async with aiohttp.ClientSession() as session:
+            async with session.get(api_url, headers=headers) as resp:
+                if resp.status == 200:
+                    return await resp.text()
+                else:
+                    raise RuntimeError(
+                        f"Failed to get diff: {resp.status} {await resp.text()}"
+                    )
 
-    def post_comment(self, pr_id: str, thread_id: int, content: str) -> dict:
-        gh = Github(self.auth_token)
-        repo_obj = gh.get_repo(self.repo_full_name)
-        pr = repo_obj.get_pull(int(pr_id))
-        # GitHub does not use thread_id for PR review comments; just post to the PR
-        comment = pr.create_issue_comment(content)
-        return {"status": "success", "comment_id": comment.id}
+    async def get_latest_commit_sha(self, pr_id: str) -> str:
+        api_url = f"https://api.github.com/repos/{self.repo_full_name}/pulls/{pr_id}"
+        headers = self.headers.copy()
+        headers["Accept"] = "application/vnd.github+json"
+        async with aiohttp.ClientSession() as session:
+            async with session.get(api_url, headers=headers) as resp:
+                if resp.status != 200:
+                    raise RuntimeError(
+                        f"Failed to get PR details: {resp.status} {await resp.text()}"
+                    )
+                pr = await resp.json()
+                return pr["head"]["sha"]
+
+    async def post_comment(self, pr_id, file_path, line, message):
+        url = f"https://api.github.com/repos/{self.project}/{self.repo_id}/pulls/{pr_id}/comments"
+        headers = {
+            "Authorization": f"token {self.auth_token}",
+            "Accept": "application/vnd.github+json",
+        }
+        last_commit_id = await self.get_latest_commit_sha(pr_id)
+        data = {
+            "body": message,
+            "commit_id": last_commit_id,
+            "path": file_path,
+            "line": line,
+            "side": "RIGHT",
+        }
+        async with aiohttp.ClientSession() as session:
+            async with session.post(url, headers=headers, json=data) as resp:
+                if resp.status not in (200, 201):
+                    raise RuntimeError(
+                        f"Failed to post comment: {resp.status} {await resp.text()}"
+                    )
+                return await resp.json()
