@@ -6,8 +6,10 @@ from .base import PullRequestClient
 
 
 class GitHubClient(PullRequestClient):
-    def __init__(self, org_url: str, project: str, repo_id: str, auth_token: str):
-        super().__init__(org_url, project, repo_id, auth_token)
+    def __init__(
+        self, org_url: str, project: str, repo_id: str, auth_token: str, platform: str
+    ):
+        super().__init__(org_url, project, repo_id, auth_token, platform)
         self.headers = {"Authorization": f"Bearer {self.auth_token}"}
         self.repo_full_name = (
             f"{self.org_url}/{self.repo_id}" if self.org_url else self.repo_id

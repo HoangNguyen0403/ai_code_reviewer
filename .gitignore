@@ -11,3 +11,4 @@ dist/
 __pycache__
 .ruff_cache
 .venv/
+gemini_review.json

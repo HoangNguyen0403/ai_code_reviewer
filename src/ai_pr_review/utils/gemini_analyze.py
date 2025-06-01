@@ -3,8 +3,9 @@ import json
 import os
 from typing import Any, Dict, List
 
-import aiofiles
 import aiohttp
+
+from ai_pr_review.clients.base import PullRequestClient
 
 EXCLUDE_PATTERN_DEFAULT = "*.md,*.txt,package-lock.json,pubspec.yaml,*.g.dart,*.freezed.dart,*.gr.dart,*.json,*.graphql"
 
@@ -66,12 +67,14 @@ async def get_ai_response(
                 raise RuntimeError(f"Failed to parse Gemini response: {e}")
 
 
-async def create_review_comment(comment: Dict[str, Any], output_file: str) -> None:
+async def create_review_comment(
+    comments: List[Dict[str, Any]], output_file: str
+) -> None:
     """
     Write a single review comment to the output file in JSONL format.
     """
-    async with aiofiles.open(output_file, "a") as f:
-        await f.write(json.dumps(comment) + "\n")
+    async with open(output_file, "w") as f:
+        json.dump(comments, f, indent=2)
 
 
 def filter_diff(diff: str, exclude_patterns: list) -> str:
@@ -96,27 +99,42 @@ def filter_diff(diff: str, exclude_patterns: list) -> str:
 
 
 async def analyze_code(
-    diff: str,
-    pr_title: str,
-    pr_description: str,
+    pr_id: str,
     api_key: str,
     output_file: str,
     model: str,
-    platform: str = "generic",
+    client: PullRequestClient,
 ) -> None:
     """
     Analyze the code diff using Gemini and write review comments to the output file.
     """
+    (
+        pr_title,
+        pr_description,
+        source_branch,
+        target_branch,
+        head_sha,
+    ) = await client.get_pr_details(pr_id)
+    diff = await client.get_pr_diff(pr_id)
     env_patterns = os.environ.get("FILES_EXCLUDE", "")
     all_patterns = EXCLUDE_PATTERN_DEFAULT
     if env_patterns:
         all_patterns += "," + env_patterns
     exclude_patterns = [p.strip() for p in all_patterns.split(",") if p.strip()]
     filtered_diff = filter_diff(diff, exclude_patterns)
-    prompt = create_prompt(filtered_diff, pr_title, pr_description, platform)
+    prompt = create_prompt(filtered_diff, pr_title, pr_description, client.platform)
     comments = await get_ai_response(prompt, api_key, model)
+    formatedComments = []
     for comment in comments:
-        await create_review_comment(comment, output_file)
+        formatedComment = client.format_comment_payload(
+            file_path=comment["file"],
+            line=comment["line"],
+            message=f"**Gemini AI Suggestion**\n- Severity: {comment['severity']}\n- Category: {comment['category']}\n- Suggestion: {comment['suggestion']}\n- Rationale: {comment['rationale']}",
+            head_sha=head_sha,
+        )
+        formatedComments.append(formatedComment)
+
+    await create_review_comment(formatedComments, output_file)
 
 
 def parse_comments_from_content(text) -> List[Dict[str, Any]]:

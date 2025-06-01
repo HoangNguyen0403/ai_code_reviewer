@@ -14,6 +14,7 @@ def get_client(platform: str, config: dict) -> PullRequestClient:
             project=config["PROJECT"],
             repo_id=config["REPO_ID"],
             pat=config["AUTH_TOKEN"],  # Use pat for Azure client init
+            platform=platform,
         )
     # Add conditions for other platforms
     elif platform.lower() == "github":
@@ -22,6 +23,7 @@ def get_client(platform: str, config: dict) -> PullRequestClient:
             project=config["PROJECT"],
             repo_id=config["REPO_ID"],
             auth_token=config["AUTH_TOKEN"],
+            platform=platform,
         )
     elif platform.lower() == "gitlab":
         return GitLabClient(
@@ -29,9 +31,8 @@ def get_client(platform: str, config: dict) -> PullRequestClient:
             project=config["PROJECT"],
             repo_id=config["REPO_ID"],
             auth_token=config["AUTH_TOKEN"],
+            platform=platform,
         )
-    # elif platform.lower() == "local":
-    #      return LocalClient(...)
     else:
         raise ValueError(f"Unsupported platform: {platform}")
 
@@ -43,37 +44,17 @@ async def run_ai_review_process(platform: str):
     gemini_api_key = config["GEMINI_API_KEY"]
     ai_model = config["AI_MODEL"]
 
-    # For local mode, diff and details might be obtained differently
-    if platform.lower() == "local":
-        # Implement local git diff and commit message fetching
-        # For now, using placeholders
-        diff = "Local diff content"
-        pr_title = "Local Commit Title"
-        pr_description = "Local Commit Description"
-    else:
-        # Use the appropriate client for remote platforms
-        client = get_client(platform, config)
-        pr_id = config["PR_ID"]
-        (
-            pr_title,
-            pr_description,
-            source_branch,
-            target_branch,
-        ) = await client.get_pr_details(pr_id)
-        diff = await client.get_pr_diff(pr_id)
-        print(f"PR Diff {diff}")
-
-        # Optional: Post a comment back to the PR
+    # Use the appropriate client for remote platforms
+    client = get_client(platform, config)
+    pr_id = config["PR_ID"]
 
     # Run the AI analysis
     await analyze_code(
-        diff=diff,
-        pr_title=pr_title,
-        pr_description=pr_description,
+        pr_id=pr_id,
         api_key=gemini_api_key,
         output_file=output_file,
         model=ai_model,
-        platform=platform,  # Pass the platform to analyze_code
+        client=client,
     )
     print(f"Review comments written to {output_file}")
 
@@ -82,24 +63,18 @@ async def run_ai_review_process(platform: str):
         review_comments = json.load(f)
 
     # Post the comment back to the PR (for remote platforms)
-    # if platform.lower() != "local":
-    #     for comment in review_comments:
-    #         commentResponse = client.post_comment(
-    #             pr_id=pr_id,
-    #             file_path=comment["file"],
-    #             line=comment["line"],
-    #             message=comment["message"],
-    #         )
-    #     print(f"{platform} Commented at {comment['file']}: {commentResponse}")
+    for comment in review_comments:
+        commentResponse = client.post_comment(
+            await client.post_comment(pr_id, comment["body"], comment["position"])
+        )
+    print(f"{platform} Commented at {comment['file']}: {commentResponse}")
 
 
 async def main():
     parser = argparse.ArgumentParser(
         description="Run AI code review for a given platform."
     )
-    parser.add_argument(
-        "platform", help="The Git platform (azure, github, gitlab, local)"
-    )
+    parser.add_argument("platform", help="The Git platform (azure, github, gitlab)")
     args = parser.parse_args()
 
     try:

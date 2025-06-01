@@ -41,12 +41,6 @@ def load_config(platform: str):
         config["REPO_ID"] = get_env_var("CI_PROJECT_ID")  # Project ID
         config["PR_ID"] = get_env_var("CI_MERGE_REQUEST_IID")  # Merge Request IID
         config["AUTH_TOKEN"] = get_env_var("GITLAB_TOKEN")
-    elif platform.lower() == "local":
-        # Local mode might not need all these, or might get them differently
-        config["REPO_PATH"] = get_env_var("LOCAL_REPO_PATH", ".")
-        config["COMMIT_SHA"] = get_env_var("LOCAL_COMMIT_SHA")
-        # Local mode doesn't need ORG_URL, PROJECT, REPO_ID, PR_ID, AUTH_TOKEN
-        pass
     else:
         raise ValueError(f"Unsupported platform: {platform}")
 

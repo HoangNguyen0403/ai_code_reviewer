@@ -10,8 +10,10 @@ class AzureDevOpsClient(PullRequestClient):
     Azure DevOps API Client implementing the PullRequestClient interface.
     """
 
-    def __init__(self, org_url: str, project: str, repo_id: str, pat: str):
-        super().__init__(org_url, project, repo_id, pat)
+    def __init__(
+        self, org_url: str, project: str, repo_id: str, pat: str, platform: str
+    ):
+        super().__init__(org_url, project, repo_id, pat, platform)
         self.headers = {"Authorization": f"Basic {self._base64_pat()}"}
         self._api_version = "7.1"
         self._comment_api_version = "7.1-preview.1"
