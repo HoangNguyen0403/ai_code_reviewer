@@ -74,16 +74,6 @@ async def get_ai_response(
                 raise RuntimeError(f"Failed to parse Gemini response: {e}")
 
 
-async def create_review_comment(
-    comments: List[Dict[str, Any]], output_file: str
-) -> None:
-    """
-    Write a single review comment to the output file in JSONL format.
-    """
-    with open(output_file, "w") as f:
-        json.dump(comments, f, indent=2)
-
-
 def filter_diff(diff: str, exclude_patterns: list) -> str:
     filtered = []
     current_file = None
@@ -108,12 +98,11 @@ def filter_diff(diff: str, exclude_patterns: list) -> str:
 async def analyze_code(
     pr_id: str,
     api_key: str,
-    output_file: str,
     model: str,
     client: PullRequestClient,
-) -> None:
+) -> List[Dict[str, Any]]:
     """
-    Analyze the code diff using Gemini and write review comments to the output file.
+    Analyze the code diff using Gemini and return a list of formatted review comments.
     """
     (
         pr_title,
@@ -143,7 +132,7 @@ async def analyze_code(
         )
         formatedComments.append(formatedComment)
 
-    await create_review_comment(formatedComments, output_file)
+    return formatedComments
 
 
 def parse_comments_from_content(text) -> List[Dict[str, Any]]:
