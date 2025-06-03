@@ -58,7 +58,7 @@ class GitLabClient(PullRequestClient):
                     response.raise_for_status()
                     return await response.json()
         except Exception as e:
-            print(f"Error posting comment: {e}")
+            print(f"Error posting comment: {e} on ${body} and position {position}")
             traceback.print_exc()
 
     def format_comment_payload(

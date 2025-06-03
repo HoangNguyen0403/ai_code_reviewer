@@ -1,6 +1,7 @@
 import fnmatch
 import json
 import os
+import traceback
 from typing import Any, Dict, List
 
 import aiohttp
@@ -62,8 +63,14 @@ async def get_ai_response(
                         f"Gemini API returned empty content: {resp_json}"
                     )
                 return parse_comments_from_content(content)
+            except aiohttp.ClientResponseError as e:
+                errorText = {await e.response.text() if e.response else ""}
+                print(f"HTTP error: {e.status} - {e.message}")
+                print(f"Response text: {errorText}")
+                traceback.print_exc()
+                raise RuntimeError(f"Unexpected error: {errorText}")
             except Exception as e:
-                print(f"Prompt sent to Gemini: {prompt}")
+                traceback.print_exc()
                 raise RuntimeError(f"Failed to parse Gemini response: {e}")
 
 
