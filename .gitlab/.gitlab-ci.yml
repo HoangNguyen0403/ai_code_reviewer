@@ -17,7 +17,7 @@ gemini_code_review:
     CI_PROJECT_ID: "$CI_PROJECT_ID"
     CI_MERGE_REQUEST_IID: "$CI_MERGE_REQUEST_IID"
     GITLAB_TOKEN: "$CI_JOB_TOKEN"
-    GEMINI_API_KEY: "$GEMINI_API_KEY"
+    GOOGLE_API_KEY: "$GOOGLE_API_KEY"
     AI_MODEL: "gemini-2.5-flash-preview-05-20"
   script:
     - |

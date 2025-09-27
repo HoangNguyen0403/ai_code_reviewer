@@ -11,9 +11,11 @@ def get_env_var(name: str, default: str = None) -> str:
 
 def load_config(platform: str):
     """Loads configuration based on the specified platform."""
+    debug_str = os.environ.get("DEBUG", "false").strip().lower()
+    debug_bool = debug_str in ("1", "true", "yes", "on")
     config = {
-        "GEMINI_API_KEY": get_env_var("GEMINI_API_KEY"),
-        "AI_MODEL": get_env_var("AI_MODEL", default="gemini-2.0-flash"),
+        "AI_MODEL": get_env_var("AI_MODEL", default="gemini-2.0-flash-lite-001"),
+        "DEBUG": debug_bool,
     }
 
     if platform.lower() == "azure":

@@ -12,3 +12,6 @@ __pycache__
 .ruff_cache
 .venv/
 gemini_review.json
+build/
+debug/
+scripts/

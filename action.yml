@@ -6,7 +6,7 @@ inputs:
   GITHUB_TOKEN:
     description: 'GitHub token to interact with the repository'
     required: true
-  GEMINI_API_KEY:
+  GOOGLE_API_KEY:
     description: 'Google Gemini API key'
     required: true
   AI_MODEL:
@@ -39,7 +39,7 @@ runs:
         GITHUB_REPOSITORY: ${{ github.repository }}
         GITHUB_PULL_REQUEST_ID: ${{ github.event.pull_request.number }}
         GITHUB_TOKEN: ${{ inputs.GITHUB_TOKEN }}
-        GEMINI_API_KEY: ${{ inputs.GEMINI_API_KEY }}
+        GOOGLE_API_KEY: ${{ inputs.GOOGLE_API_KEY }}
         AI_MODEL: ${{ inputs.AI_MODEL }}
         FILES_EXCLUDE: ${{ inputs.FILES_EXCLUDE }}
       run: ai-pr-reviewer github
