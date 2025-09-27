@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 from ..clients import PullRequestClient
 from ..utils import DiffProcessor, LineNumberMapper
@@ -70,7 +70,6 @@ class CodeReviewComment:
 
 class BaseLLMProvider(ABC):
     def __init__(self, config: AIAnalysisConfig):
-        self.config = config
         self.config = config
         self._client = None
 
@@ -598,7 +597,7 @@ class BaseLLMProvider(ABC):
         line_mapper: LineNumberMapper,
         head_sha: str,
         base_sha: str,
-    ) -> tuple[List[Dict], List[Dict], List[Dict]]:
+    ) -> Tuple[List[Dict], List[Dict], List[Dict]]:
         """Process a batch of hunks with rate limiting."""
         import asyncio
 
