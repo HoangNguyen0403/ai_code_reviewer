@@ -115,6 +115,7 @@ class GitLabClient(PullRequestClient):
                 print(
                     f"Failed to submit comment {idx + 1}/{total_comments}: {error_msg}"
                 )
+                traceback.print_exc()
                 position = comment.get("position", {})
                 failed_comments.append(
                     {

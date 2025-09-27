@@ -45,6 +45,8 @@ class AIAnalysisConfig:
         for key, value in overrides.items():
             if hasattr(config, key):
                 setattr(config, key, value)
+            else:
+                raise ValueError(f"Invalid override key for AIAnalysisConfig: '{key}'")
 
         return config
 
@@ -67,9 +69,8 @@ class CodeReviewComment:
 
 
 class BaseLLMProvider(ABC):
-    """Abstract base class for LLM providers used in code review."""
-
     def __init__(self, config: AIAnalysisConfig):
+        self.config = config
         self.config = config
         self._client = None
 
@@ -372,7 +373,13 @@ class BaseLLMProvider(ABC):
 
         try:
             # DRY_RUN: write and return without posting
-            from ..utils import is_dry_run
+            try:
+                from ..utils import is_dry_run
+            except ImportError:
+                # Fallback if is_dry_run does not exist
+                def is_dry_run():
+                    import os
+                    return os.environ.get("AI_DRY_RUN", "0") == "1"
             if is_dry_run():
                 submission_log["status"] = "dry_run"
                 self._save_submission_log(submission_log)

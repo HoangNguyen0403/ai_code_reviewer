@@ -115,18 +115,23 @@ class GeminiProvider(BaseLLMProvider):
                 return content
 
             except Exception as e:
+                # Prefer structured error handling if available
+                error_code = getattr(e, "code", None)
+                # Fallback to string parsing if structured info is not available
                 error_str = str(e)
-                if "429" in error_str or "RESOURCE_EXHAUSTED" in error_str:
+                is_rate_limited = (
+                    error_code == 429
+                    or error_code == "RESOURCE_EXHAUSTED"
+                    or "429" in error_str
+                    or "RESOURCE_EXHAUSTED" in error_str
+                )
+                if is_rate_limited:
                     if attempt < max_retries - 1:
-                        # Extract retry delay from error if available
                         retry_delay = self._retry_delay
-                        if "retryDelay" in error_str:
-                            import re
-
-                            match = re.search(r"'retryDelay': '(\d+)s'", error_str)
-                            if match:
-                                retry_delay = int(match.group(1))
-
+                        # Try to extract retry delay from structured error if available
+                        retry_delay_attr = getattr(e, "retry_delay", None)
+                        if retry_delay_attr is not None:
+                            retry_delay = retry_delay_attr
                         print(
                             f"Rate limit hit, retrying in {retry_delay} seconds... (attempt {attempt + 1}/{max_retries})"
                         )

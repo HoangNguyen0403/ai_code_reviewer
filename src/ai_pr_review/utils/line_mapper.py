@@ -4,7 +4,7 @@ from typing import Dict, List, Optional, Tuple
 
 class LineNumberMapper:
     """Handles mapping AI comments to correct absolute line numbers."""
-
+    
     @staticmethod
     def map_comments_to_absolute_lines(
         ai_comments: List[Dict], hunks: List[Dict]
@@ -161,6 +161,7 @@ class LineNumberMapper:
         best_match_score = 0
         best_match_diff_position = None
         diff_index = 0
+        max_words = 3
 
         search_text = f"{suggestion_text} {rationale_text}".lower()
 
@@ -175,7 +176,7 @@ class LineNumberMapper:
                     score = 0
 
                     for word in search_text.split():
-                        if len(word) > 3 and word in line_lower:
+                        if len(word) > max_words and word in line_lower:
                             score += 1
 
                     # Prefer added lines over context lines
